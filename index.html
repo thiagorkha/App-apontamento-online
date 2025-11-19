@@ -326,7 +326,7 @@
         appData.observation = observacao;
 
         // Verifica se a URL do script foi definida corretamente
-        if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyXYkIuwaF90lhKpYZCgGUoIEqS66R9qYXGJglQowgj4lHsw9fMBFBQJTJMJaUjU_cL/exec') || !SCRIPT_URL.startsWith('https://script.google.com/macros/s/AKfycbyXYkIuwaF90lhKpYZCgGUoIEqS66R9qYXGJglQowgj4lHsw9fMBFBQJTJMJaUjU_cL/exec')) {
+        if (SCRIPT_URL.includes('VOU_COLOCAR_AQUI_O_URL') || !SCRIPT_URL.startsWith('https://')) {
             showMessage("ERRO: Por favor, configure a URL do Google Apps Script (variável SCRIPT_URL) para o URL 'exec' do seu deployment.", true);
             return;
         }
@@ -405,6 +405,7 @@
 
 </body>
 </html>
+
 
 
 
