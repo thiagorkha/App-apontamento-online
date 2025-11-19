@@ -106,7 +106,16 @@
             </div>
             <div class="mb-6">
                 <label for="maquina" class="block text-sm font-medium text-gray-700">Máquina / Linha</label>
-                <input type="text" id="maquina" class="input-field" placeholder="Ex: CNC-05" required>
+                <select id="maquina" class="input-field">
+                    <option value="">Selecione...</option>
+                    <option>Romi D1000</option>
+                    <option>Veker Mvk 1050</option>
+                    <option>Torno Cnc Cosmos</option>
+                    <option>Torno Convencional</option>
+                    <option>Torno Mascote</option>
+                    <option>Fresadora Ferramenteira</option>
+                </select>
+
             </div>
             <button onclick="nextStep(1)" class="btn-primary">Próximo</button>
         </div>
@@ -405,6 +414,7 @@
 
 </body>
 </html>
+
 
 
 
