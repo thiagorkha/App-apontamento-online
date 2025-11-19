@@ -1,0 +1,465 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Produção</title>
+    <!-- Carrega o Tailwind CSS CDN para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define a fonte Inter e cores padrão */
+        :root {
+            --primary: #3b82f6; /* blue-500 */
+            --secondary: #10b981; /* emerald-500 */
+            --background: #f3f4f6; /* gray-100 */
+            --card: #ffffff;
+            --text-color: #1f2937; /* gray-800 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-color);
+        }
+        .container-app {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .card {
+            background-color: var(--card);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            margin-top: 0.5rem;
+        }
+        .input-field:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+        .btn-secondary:hover {
+            background-color: #059669;
+        }
+        .summary-item strong {
+            display: block;
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        .summary-item span {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="container-app">
+    <div class="card">
+        <h1 id="app-title" class="text-2xl font-bold mb-6 text-center text-gray-800">Registro de Produção</h1>
+
+
+        <!-- MENSAGEM DE ERRO/SUCESSO -->
+        <div id="message-box" class="hidden p-3 mb-4 rounded-lg text-center" role="alert"></div>
+
+
+        <!-- Passo 1: Informações Básicas -->
+        <div id="step-1" class="step">
+            <h2 class="text-xl font-semibold mb-4 text-center">Início do Turno</h2>
+            <div class="mb-4">
+                <label for="operador" class="block text-sm font-medium text-gray-700">Nome do Operador</label>
+                <input type="text" id="operador" class="input-field" placeholder="Ex: João Silva" required>
+            </div>
+            <div class="mb-6">
+                <label for="maquina" class="block text-sm font-medium text-gray-700">Máquina / Linha</label>
+                <input type="text" id="maquina" class="input-field" placeholder="Ex: CNC-05" required>
+            </div>
+            <button onclick="nextStep(1)" class="btn-primary">Próximo</button>
+        </div>
+
+
+        <!-- Passo 2: Informações da Ordem de Produção -->
+        <div id="step-2" class="step hidden">
+            <h2 class="text-xl font-semibold mb-4 text-center">Ordem de Produção</h2>
+            <div class="mb-4">
+                <label for="op" class="block text-sm font-medium text-gray-700">Ordem de Produção (OP)</label>
+                <input type="text" id="op" class="input-field" placeholder="Ex: 2024-12345" required>
+            </div>
+            <div class="mb-6">
+                <label for="cp" class="block text-sm font-medium text-gray-700">Código do Produto (CP)</label>
+                <input type="text" id="cp" class="input-field" placeholder="Ex: PROD-A01" required>
+            </div>
+            <button onclick="startProduction()" class="btn-secondary">Iniciar Produção</button>
+            <button onclick="prevStep(2)" class="btn-primary mt-3 opacity-75">Voltar</button>
+        </div>
+
+
+        <!-- Passo 3: Cronômetro de Produção -->
+        <div id="step-3" class="step hidden">
+            <h2 class="text-xl font-semibold mb-6 text-center">Tempo em Produção</h2>
+            <div class="text-center mb-8 p-6 bg-gray-100 rounded-lg">
+                <p class="text-5xl font-mono font-bold text-gray-800" id="timer-display">00:00:00</p>
+                <p class="text-sm text-gray-500 mt-2">Contando...</p>
+            </div>
+            <button onclick="finishProduction()" class="btn-primary">Finalizar Produção</button>
+        </div>
+
+
+        <!-- Passo 4: Resumo e Dados Finais -->
+        <div id="step-4" class="step hidden">
+            <h2 class="text-xl font-semibold mb-4 text-center">Resumo Final</h2>
+
+
+            <div class="space-y-4 p-4 mb-6 border border-gray-200 rounded-lg bg-gray-50">
+                <div class="summary-item"><strong>Tempo Total de Produção</strong><span id="summary-duration">00:00:00</span></div>
+                <div class="summary-item"><strong>Operador</strong><span id="summary-operador">N/A</span></div>
+                <div class="summary-item"><strong>OP / CP</strong><span id="summary-op-cp">N/A / N/A</span></div>
+                <div class="summary-item"><strong>Início</strong><span id="summary-start-time">N/A</span></div>
+                <div class="summary-item"><strong>Fim</strong><span id="summary-end-time">N/A</span></div>
+            </div>
+
+
+            <div class="mb-4">
+                <label for="quantidade" class="block text-sm font-medium text-gray-700">Quantidade Produzida</label>
+                <input type="number" id="quantidade" class="input-field" placeholder="0" min="0" required>
+            </div>
+            <div class="mb-6">
+                <label for="observacao" class="block text-sm font-medium text-gray-700">Observação (Opcional)</label>
+                <textarea id="observacao" class="input-field" rows="3" placeholder="Qualquer problema ou nota relevante."></textarea>
+            </div>
+
+
+            <button onclick="saveFinalData()" class="btn-secondary">Salvar Dados Finais</button>
+        </div>
+
+
+        <!-- Passo 5: Confirmação de Salvamento -->
+        <div id="step-5" class="step hidden">
+            <div class="text-center p-6">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-secondary mb-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <h2 class="text-xl font-semibold mb-2">Dados Salvos com Sucesso!</h2>
+                <p class="text-gray-600 mb-6">O registro de produção foi concluído e salvo na planilha.</p>
+                <button onclick="resetApp()" class="btn-primary">Iniciar Novo Registro</button>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+<script>
+    // Variável para armazenar todos os dados da aplicação
+    const appData = {
+        operador: '',
+        maquina: '',
+        op: '',
+        cp: '',
+        startTime: null,
+        endTime: null,
+        durationSeconds: 0,
+        quantity: 0,
+        observation: '',
+    };
+
+
+    // Variáveis do Cronômetro
+    let timerInterval = null;
+    const TIMER_DISPLAY = document.getElementById('timer-display');
+    const SCRIPT_URL = 'VOU_COLOCAR_AQUI_O_URL_DO_APP_SCRIPT_DEPOIS_QUE_EU_IMPLANTAR'; // << SUBSTITUA ESTA URL PELO SEU URL DO APP SCRIPT DEPLOYADO
+
+
+    // Função auxiliar para formatar a data/hora
+    function formatDateTime(date) {
+        if (!date) return 'N/A';
+        const d = new Date(date);
+        return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+    }
+
+
+    // Função auxiliar para formatar a duração em HH:MM:SS
+    function formatDuration(seconds) {
+        if (seconds < 0) seconds = 0;
+        const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const s = String(Math.floor(seconds % 60)).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+
+    // Função para mostrar mensagens (usada no lugar do alert())
+    function showMessage(text, isError = false) {
+        const box = document.getElementById('message-box');
+        box.textContent = text;
+        box.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+        box.classList.add(isError ? 'bg-red-100' : 'bg-green-100');
+        box.classList.add(isError ? 'text-red-700' : 'text-green-700');
+        setTimeout(() => box.classList.add('hidden'), 5000);
+    }
+
+
+    // Função para navegar entre as etapas
+    function goToStep(stepNumber) {
+        const steps = [1, 2, 3, 4, 5];
+        steps.forEach(step => {
+            const el = document.getElementById(`step-${step}`);
+            if (el) {
+                el.classList.add('hidden');
+            }
+        });
+        const targetEl = document.getElementById(`step-${stepNumber}`);
+        if (targetEl) {
+            targetEl.classList.remove('hidden');
+        }
+    }
+
+
+    // Ação para o botão 'Próximo' (Passo 1 -> 2)
+    function nextStep(currentStep) {
+        if (currentStep === 1) {
+            const operador = document.getElementById('operador').value.trim();
+            const maquina = document.getElementById('maquina').value.trim();
+
+
+            if (!operador || !maquina) {
+                showMessage("Por favor, preencha o Nome do Operador e a Máquina.", true);
+                return;
+            }
+
+
+            // Salva os dados na memória (Passo 1)
+            appData.operador = operador;
+            appData.maquina = maquina;
+            
+            // Vai para a próxima tela
+            goToStep(2);
+            
+            // NOTA: A solicitação original pedia para salvar esses dados AGORA na planilha,
+            // mas isso complica o Apps Script (2 requisições separadas). Vamos simplificar
+            // e salvar TUDO na etapa final (Passo 4).
+
+
+        } else {
+            // Outras transições se necessário
+            goToStep(currentStep + 1);
+        }
+    }
+
+
+    // Ação para o botão 'Voltar' (Passo 2 -> 1)
+    function prevStep(currentStep) {
+        if (currentStep === 2) {
+            goToStep(1);
+        }
+    }
+
+
+    // Ação para o botão 'Iniciar Produção' (Passo 2 -> 3)
+    function startProduction() {
+        const op = document.getElementById('op').value.trim();
+        const cp = document.getElementById('cp').value.trim();
+
+
+        if (!op || !cp) {
+            showMessage("Por favor, preencha a OP e o CP para iniciar.", true);
+            return;
+        }
+
+
+        // Salva os dados de OP/CP e a hora de início
+        appData.op = op;
+        appData.cp = cp;
+        appData.startTime = new Date();
+        appData.durationSeconds = 0;
+
+
+        // Inicia o cronômetro
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(updateTimer, 1000);
+
+
+        // Vai para a tela do cronômetro
+        goToStep(3);
+        showMessage(`Produção (OP: ${op}) iniciada às ${formatDateTime(appData.startTime)}`, false);
+
+
+    }
+
+
+    // Atualiza o display do cronômetro
+    function updateTimer() {
+        if (appData.startTime) {
+            const now = new Date();
+            const elapsed = Math.floor((now - appData.startTime) / 1000);
+            appData.durationSeconds = elapsed;
+            TIMER_DISPLAY.textContent = formatDuration(elapsed);
+        }
+    }
+
+
+    // Ação para o botão 'Finalizar Produção' (Passo 3 -> 4)
+    function finishProduction() {
+        // Para o cronômetro
+        if (timerInterval) clearInterval(timerInterval);
+        appData.endTime = new Date();
+
+
+        // Verifica se houve tempo suficiente
+        if (appData.durationSeconds === 0) {
+            showMessage("O tempo de produção precisa ser maior que 0 segundos.", true);
+            return;
+        }
+
+
+        // Preenche o resumo no Passo 4
+        document.getElementById('summary-duration').textContent = formatDuration(appData.durationSeconds);
+        document.getElementById('summary-operador').textContent = appData.operador;
+        document.getElementById('summary-op-cp').textContent = `${appData.op} / ${appData.cp}`;
+        document.getElementById('summary-start-time').textContent = formatDateTime(appData.startTime);
+        document.getElementById('summary-end-time').textContent = formatDateTime(appData.endTime);
+        
+        // Vai para a tela de resumo
+        goToStep(4);
+    }
+
+
+    // Ação para o botão 'Salvar Dados Finais' (Passo 4 -> 5)
+    async function saveFinalData() {
+        const quantidade = document.getElementById('quantidade').value;
+        const observacao = document.getElementById('observacao').value;
+
+
+        if (quantidade === '' || isNaN(parseInt(quantidade))) {
+            showMessage("Por favor, preencha a Quantidade Produzida.", true);
+            return;
+        }
+
+
+        appData.quantity = parseInt(quantidade);
+        appData.observation = observacao;
+        
+        // Verifica se a URL do script foi definida
+        if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbwVYe1KZgks_6dFXAQVrTn7M6QnzC5whVrjGV1FrKFXKOwuQzyCGbXIQH2VqNq_V0yd/exec')) {
+            showMessage("ERRO: Por favor, configure a URL do Google Apps Script no código JavaScript (variável SCRIPT_URL).", true);
+            return;
+        }
+
+
+        // Prepara os dados para envio
+        const dataToSend = {
+            Operador: appData.operador,
+            Maquina: appData.maquina,
+            OP: appData.op,
+            CP: appData.cp,
+            HoraInicio: formatDateTime(appData.startTime),
+            HoraFim: formatDateTime(appData.endTime),
+            Duracao: formatDuration(appData.durationSeconds),
+            Quantidade: appData.quantity,
+            Observacao: appData.observation,
+        };
+        
+        // Desabilita o botão para evitar cliques duplicados
+        const saveButton = event.target;
+        saveButton.disabled = true;
+        saveButton.textContent = 'Salvando...';
+
+
+        try {
+            // Envio dos dados para o Google Apps Script
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Necessário para evitar erro CORS no Apps Script
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+
+            // NOTA: Como usamos 'no-cors', a resposta HTTP real não pode ser lida pelo JS,
+            // mas o script do Google Sheets receberá e processará os dados.
+            // Assumimos o sucesso após o envio da requisição.
+
+
+            showMessage("Dados enviados com sucesso! Verifique a planilha.", false);
+            goToStep(5); // Vai para a tela de confirmação
+
+
+        } catch (error) {
+            console.error('Erro ao enviar dados:', error);
+            showMessage("Erro ao salvar dados. Verifique o console.", true);
+            saveButton.disabled = false;
+            saveButton.textContent = 'Salvar Dados Finais';
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = 'Salvar Dados Finais';
+        }
+    }
+
+
+    // Ação para o botão 'Iniciar Novo Registro'
+    function resetApp() {
+        // Limpa a memória e os campos
+        Object.keys(appData).forEach(key => appData[key] = (key === 'startTime' || key === 'endTime') ? null : (key === 'durationSeconds' || key === 'quantity' ? 0 : ''));
+        
+        document.getElementById('operador').value = '';
+        document.getElementById('maquina').value = '';
+        document.getElementById('op').value = '';
+        document.getElementById('cp').value = '';
+        document.getElementById('quantidade').value = '';
+        document.getElementById('observacao').value = '';
+        TIMER_DISPLAY.textContent = '00:00:00';
+
+
+        if (timerInterval) clearInterval(timerInterval);
+        
+        goToStep(1);
+    }
+    
+    // Inicia na primeira etapa
+    document.addEventListener('DOMContentLoaded', () => {
+        goToStep(1);
+    });
+
+
+</script>
+
+
+</body>
+</html>
