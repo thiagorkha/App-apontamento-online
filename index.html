@@ -163,7 +163,7 @@
             </div>
 
 
-            <button onclick="saveFinalData()" class="btn-secondary">Salvar Dados Finais</button>
+            <button onclick="saveFinalData(this)" class="btn-secondary">Salvar Dados Finais</button>
         </div>
 
 
@@ -198,12 +198,12 @@
         observation: '',
     };
 
-
     // Variáveis do Cronômetro
     let timerInterval = null;
     const TIMER_DISPLAY = document.getElementById('timer-display');
-    const SCRIPT_URL = 'VOU_COLOCAR_AQUI_O_URL_DO_APP_SCRIPT_DEPOIS_QUE_EU_IMPLANTAR'; // << SUBSTITUA ESTA URL PELO SEU URL DO APP SCRIPT DEPLOYADO
 
+    // <<< Substitua aqui pela URL do seu Apps Script já deployado (exec) >>>
+    const SCRIPT_URL = 'VOU_COLOCAR_AQUI_O_URL_DO_APP_SCRIPT_DEPOIS_QUE_EU_IMPLANTAR';
 
     // Função auxiliar para formatar a data/hora
     function formatDateTime(date) {
@@ -211,7 +211,6 @@
         const d = new Date(date);
         return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
     }
-
 
     // Função auxiliar para formatar a duração em HH:MM:SS
     function formatDuration(seconds) {
@@ -221,7 +220,6 @@
         const s = String(Math.floor(seconds % 60)).padStart(2, '0');
         return `${h}:${m}:${s}`;
     }
-
 
     // Função para mostrar mensagens (usada no lugar do alert())
     function showMessage(text, isError = false) {
@@ -233,96 +231,60 @@
         setTimeout(() => box.classList.add('hidden'), 5000);
     }
 
-
     // Função para navegar entre as etapas
     function goToStep(stepNumber) {
         const steps = [1, 2, 3, 4, 5];
         steps.forEach(step => {
             const el = document.getElementById(`step-${step}`);
-            if (el) {
-                el.classList.add('hidden');
-            }
+            if (el) el.classList.add('hidden');
         });
         const targetEl = document.getElementById(`step-${stepNumber}`);
-        if (targetEl) {
-            targetEl.classList.remove('hidden');
-        }
+        if (targetEl) targetEl.classList.remove('hidden');
     }
 
-
-    // Ação para o botão 'Próximo' (Passo 1 -> 2)
     function nextStep(currentStep) {
         if (currentStep === 1) {
             const operador = document.getElementById('operador').value.trim();
             const maquina = document.getElementById('maquina').value.trim();
-
 
             if (!operador || !maquina) {
                 showMessage("Por favor, preencha o Nome do Operador e a Máquina.", true);
                 return;
             }
 
-
-            // Salva os dados na memória (Passo 1)
             appData.operador = operador;
             appData.maquina = maquina;
-            
-            // Vai para a próxima tela
             goToStep(2);
-            
-            // NOTA: A solicitação original pedia para salvar esses dados AGORA na planilha,
-            // mas isso complica o Apps Script (2 requisições separadas). Vamos simplificar
-            // e salvar TUDO na etapa final (Passo 4).
-
-
         } else {
-            // Outras transições se necessário
             goToStep(currentStep + 1);
         }
     }
 
-
-    // Ação para o botão 'Voltar' (Passo 2 -> 1)
     function prevStep(currentStep) {
-        if (currentStep === 2) {
-            goToStep(1);
-        }
+        if (currentStep === 2) goToStep(1);
     }
 
-
-    // Ação para o botão 'Iniciar Produção' (Passo 2 -> 3)
     function startProduction() {
         const op = document.getElementById('op').value.trim();
         const cp = document.getElementById('cp').value.trim();
-
 
         if (!op || !cp) {
             showMessage("Por favor, preencha a OP e o CP para iniciar.", true);
             return;
         }
 
-
-        // Salva os dados de OP/CP e a hora de início
         appData.op = op;
         appData.cp = cp;
         appData.startTime = new Date();
         appData.durationSeconds = 0;
 
-
-        // Inicia o cronômetro
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(updateTimer, 1000);
 
-
-        // Vai para a tela do cronômetro
         goToStep(3);
         showMessage(`Produção (OP: ${op}) iniciada às ${formatDateTime(appData.startTime)}`, false);
-
-
     }
 
-
-    // Atualiza o display do cronômetro
     function updateTimer() {
         if (appData.startTime) {
             const now = new Date();
@@ -332,56 +294,43 @@
         }
     }
 
-
-    // Ação para o botão 'Finalizar Produção' (Passo 3 -> 4)
     function finishProduction() {
-        // Para o cronômetro
         if (timerInterval) clearInterval(timerInterval);
         appData.endTime = new Date();
 
-
-        // Verifica se houve tempo suficiente
         if (appData.durationSeconds === 0) {
             showMessage("O tempo de produção precisa ser maior que 0 segundos.", true);
             return;
         }
 
-
-        // Preenche o resumo no Passo 4
         document.getElementById('summary-duration').textContent = formatDuration(appData.durationSeconds);
         document.getElementById('summary-operador').textContent = appData.operador;
         document.getElementById('summary-op-cp').textContent = `${appData.op} / ${appData.cp}`;
         document.getElementById('summary-start-time').textContent = formatDateTime(appData.startTime);
         document.getElementById('summary-end-time').textContent = formatDateTime(appData.endTime);
-        
-        // Vai para a tela de resumo
+
         goToStep(4);
     }
 
-
-    // Ação para o botão 'Salvar Dados Finais' (Passo 4 -> 5)
-    async function saveFinalData() {
+    // NOTE: alterei a chamada para passar o botão (onclick="saveFinalData(this)")
+    async function saveFinalData(saveButton) {
         const quantidade = document.getElementById('quantidade').value;
         const observacao = document.getElementById('observacao').value;
-
 
         if (quantidade === '' || isNaN(parseInt(quantidade))) {
             showMessage("Por favor, preencha a Quantidade Produzida.", true);
             return;
         }
 
-
         appData.quantity = parseInt(quantidade);
         appData.observation = observacao;
-        
-        // Verifica se a URL do script foi definida
-        if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbwVYe1KZgks_6dFXAQVrTn7M6QnzC5whVrjGV1FrKFXKOwuQzyCGbXIQH2VqNq_V0yd/exec')) {
-            showMessage("ERRO: Por favor, configure a URL do Google Apps Script no código JavaScript (variável SCRIPT_URL).", true);
+
+        // Verifica se a URL do script foi definida corretamente
+        if (SCRIPT_URL.includes('VOU_COLOCAR') || !SCRIPT_URL.startsWith('https://')) {
+            showMessage("ERRO: Por favor, configure a URL do Google Apps Script (variável SCRIPT_URL) para o URL 'exec' do seu deployment.", true);
             return;
         }
 
-
-        // Prepara os dados para envio
         const dataToSend = {
             Operador: appData.operador,
             Maquina: appData.maquina,
@@ -393,51 +342,46 @@
             Quantidade: appData.quantity,
             Observacao: appData.observation,
         };
-        
-        // Desabilita o botão para evitar cliques duplicados
-        const saveButton = event.target;
-        saveButton.disabled = true;
-        saveButton.textContent = 'Salvando...';
 
+        // garante referência ao botão
+        const btn = saveButton || document.querySelector('button[onclick*="saveFinalData"]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
 
         try {
-            // Envio dos dados para o Google Apps Script
-            const response = await fetch(SCRIPT_URL, {
+            // -------------------------
+            // Opção A (compatível sem CORS): usa no-cors (envio opaco). Não consegue ler resposta.
+            // -------------------------
+            await fetch(SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Necessário para evitar erro CORS no Apps Script
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                mode: 'no-cors', // mantém para permitir envio sem configurar CORS no Apps Script
+                // Não enviar headers customizados em no-cors (o browser bloqueia)
                 body: JSON.stringify(dataToSend)
             });
 
-
-            // NOTA: Como usamos 'no-cors', a resposta HTTP real não pode ser lida pelo JS,
-            // mas o script do Google Sheets receberá e processará os dados.
-            // Assumimos o sucesso após o envio da requisição.
-
-
+            // Assumimos que o script recebeu os dados (requisição opaca).
             showMessage("Dados enviados com sucesso! Verifique a planilha.", false);
-            goToStep(5); // Vai para a tela de confirmação
+            goToStep(5);
 
+            // -------------------------
+            // Observação: se você configurar CORS no Apps Script (veja instruções abaixo),
+            // substitua a chamada acima por:
+            // const resp = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dataToSend) });
+            // const json = await resp.json(); // ler resposta real
+            // -------------------------
 
         } catch (error) {
             console.error('Erro ao enviar dados:', error);
-            showMessage("Erro ao salvar dados. Verifique o console.", true);
-            saveButton.disabled = false;
-            saveButton.textContent = 'Salvar Dados Finais';
+            showMessage("Erro ao salvar dados. Veja console para mais detalhes.", true);
+            if (btn) { btn.disabled = false; btn.textContent = 'Salvar Dados Finais'; }
+            return;
         } finally {
-            saveButton.disabled = false;
-            saveButton.textContent = 'Salvar Dados Finais';
+            if (btn) { btn.disabled = false; btn.textContent = 'Salvar Dados Finais'; }
         }
     }
 
-
-    // Ação para o botão 'Iniciar Novo Registro'
     function resetApp() {
-        // Limpa a memória e os campos
         Object.keys(appData).forEach(key => appData[key] = (key === 'startTime' || key === 'endTime') ? null : (key === 'durationSeconds' || key === 'quantity' ? 0 : ''));
-        
+
         document.getElementById('operador').value = '';
         document.getElementById('maquina').value = '';
         document.getElementById('op').value = '';
@@ -446,20 +390,19 @@
         document.getElementById('observacao').value = '';
         TIMER_DISPLAY.textContent = '00:00:00';
 
-
         if (timerInterval) clearInterval(timerInterval);
-        
+
         goToStep(1);
     }
-    
+
     // Inicia na primeira etapa
     document.addEventListener('DOMContentLoaded', () => {
         goToStep(1);
     });
-
-
 </script>
+
 
 
 </body>
 </html>
+
