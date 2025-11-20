@@ -330,6 +330,8 @@
     async function saveFinalData(saveButton) {
         const quantidade = document.getElementById('quantidade').value;
         const observacao = document.getElementById('observacao').value;
+        const setupTime = document.getElementById('setupTime').value;
+
 
         if (quantidade === '' || isNaN(parseInt(quantidade))) {
             showMessage("Por favor, preencha a Quantidade Produzida.", true);
@@ -419,6 +421,7 @@
 
 </body>
 </html>
+
 
 
 
