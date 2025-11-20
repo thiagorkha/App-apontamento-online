@@ -218,7 +218,7 @@
     const TIMER_DISPLAY = document.getElementById('timer-display');
 
     // <<< Substitua aqui pela URL do seu Apps Script já deployado (exec) >>>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXYkIuwaF90lhKpYZCgGUoIEqS66R9qYXGJglQowgj4lHsw9fMBFBQJTJMJaUjU_cL/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQXPruL9fpi7bsbLcOmZsaqanwMgWbWzqnp64v_kmJ7xI3FJznelkHuVK3w1ZjWr8M/exec';
 
     // Função auxiliar para formatar a data/hora
     function formatDateTime(date) {
@@ -409,6 +409,7 @@
         document.getElementById('cp').value = '';
         document.getElementById('quantidade').value = '';
         document.getElementById('observacao').value = '';
+        document.getElementById('setupTime').value = '';
         TIMER_DISPLAY.textContent = '00:00:00';
 
         if (timerInterval) clearInterval(timerInterval);
@@ -426,6 +427,7 @@
 
 </body>
 </html>
+
 
 
 
