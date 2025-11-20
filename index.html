@@ -340,6 +340,8 @@
 
         appData.quantity = parseInt(quantidade);
         appData.observation = observacao;
+        appData.setupTime = parseInt(setupTime);
+
 
         // Verifica se a URL do script foi definida corretamente
         if (SCRIPT_URL.includes('VOU_COLOCAR_AQUI_O_URL') || !SCRIPT_URL.startsWith('https://')) {
@@ -357,6 +359,8 @@
             Duracao: formatDuration(appData.durationSeconds),
             Quantidade: appData.quantity,
             Observacao: appData.observation,
+            SetupMinutos: appData.setupTime,
+
         };
 
         // garante referência ao botão
@@ -421,6 +425,7 @@
 
 </body>
 </html>
+
 
 
 
