@@ -1,10 +1,10 @@
 const DB_NAME = "producao-db"
 const STORE_NAME = "queue"
-const STATE_STORE = "state" // Added store for current state
+const STATE_STORE = "state"
 
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 2) // Incremented version
+    const request = indexedDB.open(DB_NAME, 2)
 
     request.onupgradeneeded = () => {
       const db = request.result
@@ -25,35 +25,60 @@ async function saveToQueue(data) {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, "readwrite")
   tx.objectStore(STORE_NAME).add(data)
-  return tx.complete
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
 }
 
 async function getAllQueue() {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, "readonly")
-  return tx.objectStore(STORE_NAME).getAll()
+  const store = tx.objectStore(STORE_NAME)
+  return new Promise((resolve, reject) => {
+    const request = store.getAll()
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
 }
 
 async function removeFromQueue(id) {
   const db = await openDB()
   const tx = db.transaction(STORE_NAME, "readwrite")
   tx.objectStore(STORE_NAME).delete(id)
-  return tx.complete
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
 }
 
 async function saveCurrentState(state) {
   try {
     const db = await openDB()
     const tx = db.transaction(STATE_STORE, "readwrite")
-    await tx.objectStore(STATE_STORE).put({ key: "current", data: state, timestamp: Date.now() })
+    const store = tx.objectStore(STATE_STORE)
+    store.put({ key: "current", data: state, timestamp: Date.now() })
+
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+
     // Also save to localStorage as backup
     localStorage.setItem("producao-state", JSON.stringify(state))
     localStorage.setItem("producao-state-time", Date.now().toString())
+
+    console.log("[v0] State saved successfully")
   } catch (error) {
-    console.error("Error saving state:", error)
+    console.error("[v0] Error saving state to IndexedDB:", error)
     // Fallback to localStorage only
-    localStorage.setItem("producao-state", JSON.stringify(state))
-    localStorage.setItem("producao-state-time", Date.now().toString())
+    try {
+      localStorage.setItem("producao-state", JSON.stringify(state))
+      localStorage.setItem("producao-state-time", Date.now().toString())
+      console.log("[v0] State saved to localStorage (fallback)")
+    } catch (e) {
+      console.error("[v0] Failed to save to localStorage:", e)
+    }
   }
 }
 
@@ -61,13 +86,40 @@ async function getCurrentState() {
   try {
     const db = await openDB()
     const tx = db.transaction(STATE_STORE, "readonly")
-    const result = await tx.objectStore(STATE_STORE).get("current")
-    return result ? result.data : null
-  } catch (error) {
-    console.error("Error loading state:", error)
-    // Fallback to localStorage
+    const store = tx.objectStore(STATE_STORE)
+
+    const result = await new Promise((resolve, reject) => {
+      const request = store.get("current")
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+
+    if (result && result.data) {
+      console.log("[v0] State loaded from IndexedDB")
+      return result.data
+    }
+
+    // Fallback to localStorage if IndexedDB is empty
     const stored = localStorage.getItem("producao-state")
-    return stored ? JSON.parse(stored) : null
+    if (stored) {
+      console.log("[v0] State loaded from localStorage (fallback)")
+      return JSON.parse(stored)
+    }
+
+    return null
+  } catch (error) {
+    console.error("[v0] Error loading state from IndexedDB:", error)
+    // Fallback to localStorage
+    try {
+      const stored = localStorage.getItem("producao-state")
+      if (stored) {
+        console.log("[v0] State loaded from localStorage (error fallback)")
+        return JSON.parse(stored)
+      }
+    } catch (e) {
+      console.error("[v0] Failed to load from localStorage:", e)
+    }
+    return null
   }
 }
 
@@ -75,11 +127,20 @@ async function clearCurrentState() {
   try {
     const db = await openDB()
     const tx = db.transaction(STATE_STORE, "readwrite")
-    await tx.objectStore(STATE_STORE).delete("current")
+    const store = tx.objectStore(STATE_STORE)
+    store.delete("current")
+
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+
     localStorage.removeItem("producao-state")
     localStorage.removeItem("producao-state-time")
+
+    console.log("[v0] State cleared successfully")
   } catch (error) {
-    console.error("Error clearing state:", error)
+    console.error("[v0] Error clearing state:", error)
     localStorage.removeItem("producao-state")
     localStorage.removeItem("producao-state-time")
   }
